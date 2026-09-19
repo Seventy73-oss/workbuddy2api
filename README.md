@@ -20,7 +20,7 @@
 
 - [特性](#特性)
 - [架构与端口](#架构与端口)
-- [快速开始（Docker）](#快速开始docker)
+- [Docker 部署](#docker-部署)
 - [本地运行（不用 Docker）](#本地运行不用-docker)
 - [配置](#配置)
 - [使用](#使用)
@@ -95,31 +95,193 @@
 
 ---
 
-## 快速开始（Docker）
+## Docker 部署
+
+### 前置要求
+
+| 项目 | 要求 |
+|---|---|
+| Docker Engine | 20.10+ |
+| Docker Compose | v2（用 `docker compose`，不是 `docker-compose`） |
+| 架构 | amd64 / arm64 均可（基础镜像 `python:3.12-slim` 是多架构的） |
+| 磁盘 | 镜像约 250 MB，另加账号数据 |
+
+### 一键部署
 
 ```bash
-git clone https://github.com/<your-name>/workbuddy2api.git
+# 克隆仓库
+git clone https://github.com/Seventy73-oss/workbuddy2api.git
 cd workbuddy2api
 
 cp .env.example .env
-# 按需修改 .env（端口 / 时区）
+# 可选：按需修改端口 / 时区，不改也能直接跑
 
 docker compose up -d --build
 ```
 
-打开 **<http://localhost:3008>** 就是管理面板；
-API Base URL 也是同一个地址 **<http://localhost:3008/v1>**。
+首次构建约 1–2 分钟（只装 4 个 Python 依赖，无需编译原生扩展）。
 
-查看日志：
+### 验证部署
 
 ```bash
-docker compose logs -f
+# 1) 容器状态：应为 running / healthy
+docker compose ps
+
+# 2) 健康检查
+curl -s http://127.0.0.1:3008/health
+
+# 3) 浏览器打开管理面板
+#    http://<你的主机IP>:3008
 ```
 
-数据（账号凭据、API Key、统计日志）持久化在 `./data/auth`。
+健康检查返回 `{"status":"ok",...}` 就说明两个进程都起来了。
+
+### 容器内部结构
+
+一个容器里跑两个进程（由 supervisord 管理）：
+
+| 进程 | 监听 | 是否对外 |
+|---|---|---|
+| `panel.py` | `0.0.0.0:3008` | ✅ 唯一对外端口 |
+| `converter.py` | `127.0.0.1:3009` | ❌ 仅容器内网 |
+
+对外只需要 **3008**：面板页面和 `/v1` API 都走它。
+`converter` 不发布到宿主机，从外部无法直连。
+
+### 数据持久化
+
+账号与配置存在宿主机的 `./data/auth`（挂载到容器 `/data/auth`）：
+
+```
+./data/auth/
+├── *.info                  # 账号凭据（导入后生成）
+├── .api_key                # API Key（面板里设置）
+├── .request_log.jsonl      # 请求日志
+├── .token_stats.jsonl      # Token 统计
+├── models.json             # 模型列表
+└── model_regions.json      # 模型分区
+```
+
+> 这个目录**不要提交到 Git**。仓库的 `.gitignore` 已默认忽略它。
+
+### 常用命令
+
+| 操作 | 命令 |
+|---|---|
+| 启动 | `docker compose up -d` |
+| 重新构建并启动 | `docker compose up -d --build` |
+| 查看状态 | `docker compose ps` |
+| 实时日志 | `docker compose logs -f` |
+| 最近 200 行日志 | `docker compose logs --tail=200` |
+| 重启 | `docker compose restart` |
+| 停止（**保留数据**） | `docker compose down` |
+| 停止并**删除数据** ⚠️ | `docker compose down -v` |
+| 进入容器排查 | `docker compose exec workbuddy2api bash` |
+
+> `down -v` 会删除数据卷，账号和 API Key 都会丢失，执行前请确认。
+
+### 修改端口
+
+编辑 `.env`：
+
+```bash
+PANEL_PORT=8080
+```
+
+然后重建：
+
+```bash
+docker compose up -d
+```
+
+访问地址相应变成 `http://<主机>:8080`。
+
+### 更新到新版本
+
+```bash
+cd workbuddy2api
+git pull
+docker compose up -d --build
+```
+
+数据卷不受影响，账号和配置都会保留。
+
+### 导入账号
+
+两种方式：
+
+**方式一：面板导入（推荐）**
+
+打开 `http://<主机>:3008` → **账号** → **导入**，粘贴凭据 JSON。
+
+**方式二：直接放文件**
+
+```bash
+cp 你的凭据.info ./data/auth/
+docker compose restart
+```
+
+### 反向代理与 HTTPS
+
+生产环境建议在前面加一层 Nginx 并启用 HTTPS：
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name api.example.com;
+
+    ssl_certificate     /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3008;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # ⚠️ SSE 流式必须关闭缓冲，否则回复会攒到最后一次性吐出
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 600s;
+    }
+}
+```
+
+启用后建议在 `.env` 里设置 `PUBLIC_API_BASE=https://api.example.com`，
+这样面板里展示给客户端的 Base URL 才是外部域名。
+
+> 面板的管理接口**没有鉴权**，请务必配合 Basic Auth / VPN / IP 白名单，
+> 不要直接把 3008 裸奔在公网。
+
+### 国内构建加速（可选）
+
+如果拉取 PyPI 很慢，可以在 `Dockerfile` 里给 pip 换源：
+
+```dockerfile
+RUN pip install --no-cache-dir -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+Docker 镜像本身如果拉不动，给 daemon 配 `registry-mirrors`。
+
+### 卸载
+
+```bash
+docker compose down -v          # 停止并删除数据卷
+docker rmi workbuddy2api:latest # 删除镜像
+```
+
+### 排查
+
+| 现象 | 原因 / 处理 |
+|---|---|
+| `docker compose ps` 显示 `unhealthy` | 看 `docker compose logs`；多为端口占用或依赖未装好 |
+| 面板能开，`/v1` 返回 502 | `converter` 进程没起来，检查日志里有无 Python 报错 |
+| 宿主机连不上 3008 | 确认 `.env` 的 `PANEL_PORT` 与访问端口一致；确认防火墙放行 |
+| 构建时 pip 超时 | 见上面「国内构建加速」 |
+| 账号导入后不生效 | 确认文件在 `./data/auth/` 且以 `.info` 结尾，然后 `docker compose restart` |
 
 ---
-
 ## 本地运行（不用 Docker）
 
 需要 Python 3.10+。
@@ -321,6 +483,7 @@ workbuddy2api/
 ├── start.sh                    # 本地（非 Docker）启动
 ├── requirements.txt
 ├── .env.example
+├── SECURITY.md                 # 隐私说明 + 部署安全建议
 └── LICENSE
 ```
 
@@ -372,6 +535,18 @@ location / {
 **Q：端口 3008 被占用了？**
 
 改 `.env` 里的 `PANEL_PORT`，`docker compose up -d` 即可。代码里没有写死的端口。
+
+**Q：容器起来了但状态是 unhealthy？**
+
+先看 `docker compose logs --tail=100`。常见原因是：
+宿主机 3008 已被占用、`./data/auth` 权限不对（容器内以非 root 写不进去）、
+或首次启动时依赖还没装完（等 30 秒再 `docker compose ps`）。
+
+**Q：能不能只跑一个进程、不要 supervisord？**
+
+可以，但没必要。面板和 API 是两个独立进程，supervisord 负责拉起并在崩溃时自动重启。
+如果你想拆成两个容器，让 API 容器暴露 3009、面板容器把 `CONVERTER_BASE`
+指向 API 容器的地址即可，代码本身不依赖同容器部署。
 
 ---
 
