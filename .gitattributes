@@ -1,0 +1,13 @@
+# 统一换行符：仓库内一律存 LF
+* text=auto eol=lf
+
+# Shell / Python 必须 LF，否则在 Linux 上会报 "bad interpreter"
+*.sh   text eol=lf
+*.py   text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf
+
+# 二进制
+*.png binary
+*.jpg binary
+*.gz  binary
