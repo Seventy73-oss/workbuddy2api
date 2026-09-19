@@ -1,0 +1,37 @@
+MIT License
+
+Copyright (c) 2026 workbuddy2api contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## 使用限制与免责（重要）
+
+本软件仅供个人学习与技术研究使用。
+
+1. 本软件通过逆向方式与第三方服务交互，未获任何权利方授权，
+   与腾讯及其关联公司无任何隶属、合作或背书关系。
+2. 使用者须自行确保使用行为合法合规，并遵守相关服务条款与当地法律。
+3. 禁止将本软件用于商业转售、账号出租、规避付费或任何形式的滥用。
+4. 使用者须仅使用自己合法拥有或已获授权的账号。
+5. 使用本软件可能导致账号被限流、封禁或订阅损失，全部风险由使用者自行承担。
+6. 作者与贡献者不对因使用本软件产生的任何直接或间接损失负责。
+
+如果你不同意上述任何一条，请立即停止使用并删除本软件。

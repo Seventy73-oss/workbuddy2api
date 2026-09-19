@@ -1,0 +1,7 @@
+# 每日自动签到（可选）。
+# 安装：crontab -e，把下面这行加进去（路径按实际部署调整）。
+#
+# 每 10 分钟检查一次：脚本内部按账号做稳定散列，
+# 落在 [CHECKIN_START_HOUR, CHECKIN_END_HOUR) 窗口内才真正签到，签过即跳过。
+
+*/10 * * * * cd /path/to/workbuddy2api/app && CHECKIN_START_HOUR=8 CHECKIN_END_HOUR=12 python3 daily_checkin.py /path/to/data/auth >> /path/to/data/auth/checkin.log 2>&1

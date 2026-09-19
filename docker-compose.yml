@@ -1,0 +1,31 @@
+services:
+  workbuddy2api:
+    build: .
+    image: ${WB2API_IMAGE:-workbuddy2api:latest}
+    container_name: workbuddy2api
+    restart: unless-stopped
+    ports:
+      # 唯一对外端口：Web UI + /v1 API（面板把 /v1/* 反代给内网 API 进程）
+      - "${PANEL_PORT:-3008}:3008"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      CODEBUDDY_AUTH_DIR: /data/auth
+      # 容器内端口必须与上面 ports 映射的右侧一致
+      PANEL_PORT: "3008"
+      # API 只在容器内网监听，由面板反代，不对宿主机发布
+      API_PORT: "3009"
+      CONVERTER_BASE: http://127.0.0.1:3009
+      # 仅当走独立域名 / 反向代理时才需要设置；留空 = 同源
+      PUBLIC_API_BASE: ${PUBLIC_API_BASE:-}
+      # 可选调优，见 README「配置」
+      CODEBUDDY_RATE_COOLDOWN: ${CODEBUDDY_RATE_COOLDOWN:-30}
+      CODEBUDDY_SESSION_TTL: ${CODEBUDDY_SESSION_TTL:-1800}
+      CODEBUDDY_REASONING_EFFORT: ${CODEBUDDY_REASONING_EFFORT:-}
+    volumes:
+      - ./data/auth:/data/auth
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:3008/health',timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3

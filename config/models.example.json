@@ -1,0 +1,8 @@
+﻿{
+  "models": [
+    "glm-5.3-flash",
+    "kimi-k3",
+    "deepseek-v4.1-flash",
+    "hy4-preview"
+  ]
+}

@@ -1,0 +1,43 @@
+# ---- 运行数据（账号凭据、API key、日志、统计）----
+data/
+auth/
+*.info
+*.info.disabled
+.api_key
+.cooldowns.json
+.checkin_state.json
+model_regions.json
+models.json
+.token_stats.jsonl
+.request_log.jsonl
+checkin.log
+
+# 保留示例配置
+!config/*.example.json
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# ---- 环境与密钥 ----
+.env
+.env.*
+!.env.example
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- 备份 / 打包 ----
+*.bak
+*.bak2
+*.bak_*
+*.new-*
+*.tar.gz

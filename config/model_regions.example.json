@@ -1,0 +1,9 @@
+﻿{
+  "_note": "模型 -> 允许落在哪些区的账号上。cn=国区(copilot.tencent.com)，intl=国际区(*.codebuddy.ai)。未列出的模型不做分区限制。converter 每次请求热读，改完即时生效。",
+  "regions": {
+    "glm-5.3-flash": ["cn"],
+    "kimi-k3": ["cn"],
+    "deepseek-v4.1-flash": ["cn", "intl"],
+    "hy4-preview": ["cn", "intl"]
+  }
+}
