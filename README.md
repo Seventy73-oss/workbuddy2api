@@ -109,8 +109,8 @@
 ### 一键部署
 
 ```bash
-# 克隆仓库
-git clone https://github.com/Seventy73-oss/workbuddy2api.git
+# 克隆仓库（把 <owner> 换成仓库所属账号）
+git clone https://github.com/<owner>/workbuddy2api.git
 cd workbuddy2api
 
 cp .env.example .env
